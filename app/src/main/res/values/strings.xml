@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Rocket Utils</string>
+    <string name="default_result_text">Enter a time period and hit calculate. You know you want to.</string>
+    <string name="label_number_of_satellites">Number of Satellites</string>
+    <string name="label_secs">Secs</string>
+    <string name="label_mins">Mins</string>
+    <string name="label_hours">Hours</string>
+    <string name="label_days">Days</string>
+    <string name="label_button_calculate_resonate_orbit">Calculate</string>
+    <string name="main_menu_heading">Utility Hub</string>
+    <string name="application_title">Resonant Orbit Calculator</string>
+    <string name="label_button_back">← Back</string>
+    <string name="title_resonate_orbit_calculator">Resonate Orbit</string>
+    <string name="title_burn_time_calc">Burn Time Calculator</string>
+    <string name="default_text_full_burn_calc">Enter full planned burn time above. I\'ll wait.</string>
+    <string name="label_button_calculate_burn_start">Calculate Burn Start Time</string>
+</resources>
