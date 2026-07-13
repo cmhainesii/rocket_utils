@@ -76,14 +76,14 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = days,
-                onValueChange = { days = it },
+                onValueChange = { input -> days = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.label_days))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = hours,
-                onValueChange = { hours = it },
+                onValueChange = { input -> hours = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.label_hours))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -96,14 +96,14 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = minutes,
-                onValueChange = { minutes = it },
+                onValueChange = { input -> minutes = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.label_mins))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = seconds,
-                onValueChange = { seconds = it },
+                onValueChange = { input -> seconds = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.label_secs))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -131,10 +131,10 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
         Button(
             onClick = {
                 // For now, we'll check if they entered anything and output the presets
-                val d = days.ifBlank { "0" }.toInt()
-                val h = hours.ifBlank { "0" }.toInt()
-                val m = minutes.ifBlank { "0" }.toInt()
-                val s = seconds.ifBlank { "0" }.toInt()
+                val d = days.toIntOrNull() ?: 0
+                val h = hours.toIntOrNull() ?: 0
+                val m = minutes.toIntOrNull() ?: 0
+                val s = seconds.toIntOrNull() ?: 0
 
                 val input = TimeHolder(d, h, m, s)
                 val seconds = input.toSeconds()

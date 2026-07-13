@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.TimeHolder
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
+import java.util.Locale
 
 @Composable
 fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
@@ -75,7 +76,7 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
         ) {
             OutlinedTextField(
                 value = days,
-                onValueChange = { days = it},
+                onValueChange = { input -> days = input.filter { it.isDigit() }},
                 label = { Text(stringResource(R.string.label_days)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -83,7 +84,7 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
 
             OutlinedTextField(
                 value = hours,
-                onValueChange = { hours = it },
+                onValueChange = { input -> hours = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.label_hours))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -98,7 +99,7 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
         ) {
             OutlinedTextField(
                 value = minutes,
-                onValueChange = { minutes = it },
+                onValueChange = { input -> minutes = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.label_mins))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -106,7 +107,7 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
 
             OutlinedTextField(
                 value = seconds,
-                onValueChange = { seconds = it },
+                onValueChange = { input -> seconds = input.filter { it.isDigit() } },
                 label = { Text( stringResource( R.string.label_secs))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -119,23 +120,39 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
         Button(
             onClick = {
 
-                val d = days.ifBlank { "0" }.toInt()
-                val h = hours.ifBlank { "0" }.toInt()
-                val m = minutes.ifBlank { "0" }.toInt()
-                val s = seconds.ifBlank { "0" }.toInt()
+                val d = days.toIntOrNull() ?: 0
+                val h = hours.toIntOrNull() ?: 0
+                val m = minutes.toIntOrNull() ?: 0
+                val s = seconds.toIntOrNull() ?: 0
 
                 val fullBurnTime = TimeHolder(d, h, m, s)
                 val fullBurnSeconds = fullBurnTime.toSeconds()
                 val burnStartSeconds = fullBurnSeconds / 2
+                val burnTime = TimeHolder.fromSeconds(burnStartSeconds)
 
+                val isOdd = fullBurnSeconds % 2 != 0
+                val halfSecDecimal = if (isOdd) ".5" else ""
+                val formattedSecondsLine =
+                    String.format(Locale.US,
+                        "%,d",
+                        burnStartSeconds) + halfSecDecimal
 
-                resultText = "Start burn at: T - $burnStartSeconds"
-
-                if (fullBurnSeconds % 2 != 0) {
-                    resultText += ".5"
+                val rawTimeStr = burnTime.toFormattedString()
+                val formattedTimeLine = if (isOdd) {
+                    rawTimeStr.dropLast(1) + ".5s"
+                } else {
+                    rawTimeStr
                 }
 
-                resultText += " seconds"
+
+                resultText = """
+                    Start Burn At: T - $formattedSecondsLine seconds
+                    $formattedTimeLine
+                """.trimIndent()
+                //resultText = "Start burn at: T - $burnStartSeconds seconds"
+
+
+
             },
             modifier = Modifier.fillMaxWidth()
         ) {
