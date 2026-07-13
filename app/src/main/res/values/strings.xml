@@ -13,5 +13,8 @@
     <string name="title_resonate_orbit_calculator">Resonate Orbit</string>
     <string name="title_burn_time_calc">Burn Time Calculator</string>
     <string name="default_text_full_burn_calc">Enter full planned burn time above. I\'ll wait.</string>
-    <string name="label_button_calculate_burn_start">Calculate Burn Start Time</string>
+    <string name="button_label_calculate_burn_start">Calculate Burn Start Time</string>
+    <string name="period_calc_result_default_text">Enter an altitude to calculate. Maybe I\'ll do something useful with it.</string>
+    <string name="label_orbital_period_calculator">Orbital Period Calculator</string>
+    <string name="button_label_orbital_period_calculator">Orbital Period Calculator</string>
 </resources>
