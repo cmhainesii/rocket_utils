@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,6 +43,8 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
     var seconds by remember { mutableStateOf("") }
 
     var numSatellites by remember { mutableStateOf( "" ) }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // State variable for the final calculation readout
     val defaultResultText = stringResource(R.string.default_result_text)
@@ -130,6 +133,8 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
         // -- CALCULATE TRIGGER --
         Button(
             onClick = {
+                keyboardController?.hide()
+
                 // For now, we'll check if they entered anything and output the presets
                 val d = days.toIntOrNull() ?: 0
                 val h = hours.toIntOrNull() ?: 0
@@ -155,7 +160,7 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.label_button_calculate_resonate_orbit))
+            Text(stringResource(R.string.label_button_calculate))
         }
 
         Spacer(modifier = Modifier.height(24.dp))

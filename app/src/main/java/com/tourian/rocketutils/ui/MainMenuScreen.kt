@@ -25,6 +25,7 @@ fun MainMenuScreen(
     onNavigateToCalc: () -> Unit,
     onNavigateToBurnCalc: () -> Unit,
     onNavigateToPeriodCalc: () -> Unit,
+    onNavigateToOrbitalXferCalc: () -> Unit,
 ) {
     Spacer(modifier = Modifier.height(24.dp))
     Column(
@@ -70,6 +71,15 @@ fun MainMenuScreen(
                 stringResource(R.string.button_label_orbital_period_calculator),
                 style = MaterialTheme.typography.bodyLarge)
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = onNavigateToOrbitalXferCalc,
+            modifier = Modifier.fillMaxWidth(0.8f)
+        ) {
+            Text(stringResource(R.string.label_orbital_xfer_button),
+                style = MaterialTheme.typography.bodyLarge)
+        }
     }
 }
 
@@ -80,7 +90,8 @@ fun MainMenuPreview() {
         MainMenuScreen(
             onNavigateToCalc = {},
             onNavigateToBurnCalc = {},
-            onNavigateToPeriodCalc = {})
+            onNavigateToPeriodCalc = {},
+            onNavigateToOrbitalXferCalc = {})
     }
 }
 

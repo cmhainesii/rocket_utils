@@ -6,7 +6,7 @@
     <string name="label_mins">Mins</string>
     <string name="label_hours">Hours</string>
     <string name="label_days">Days</string>
-    <string name="label_button_calculate_resonate_orbit">Calculate</string>
+    <string name="label_button_calculate">Calculate</string>
     <string name="application_title">Resonant Orbit Calculator</string>
     <string name="label_button_back">← Back</string>
     <string name="title_resonate_orbit_calculator">Resonate Orbit</string>
@@ -17,4 +17,9 @@
     <string name="label_orbital_period_calculator">Orbital Period</string>
     <string name="button_label_orbital_period_calculator">Orbital Period Calculator</string>
     <string name="label_period_calc_altitude">Altitude (meters)</string>
+    <string name="heading_orbital_xfer">Orbital Transfer</string>
+    <string name="label_parent_body">Parent Body</string>
+    <string name="label_intial_altitude">Initial Altitude</string>
+    <string name="label_target_altitude">Target Altitude</string>
+    <string name="label_orbital_xfer_button">Orbital Transfer Calculator</string>
 </resources>

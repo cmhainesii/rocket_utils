@@ -6,16 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.tourian.rocketutils.ui.BurnTimeCalculatorScreen
 import com.tourian.rocketutils.ui.MainMenuScreen
 import com.tourian.rocketutils.ui.OrbitCalculatorScreen
+import com.tourian.rocketutils.ui.OrbitalXferCalculator
 import com.tourian.rocketutils.ui.PeriodCalculatorScreen
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 
@@ -37,7 +36,8 @@ class MainActivity : ComponentActivity() {
                             MainMenuScreen(
                                 onNavigateToCalc = { currentScreen = "calculator" },
                                 onNavigateToBurnCalc = { currentScreen = "burn_time" },
-                                onNavigateToPeriodCalc = { currentScreen = "period_calc"})
+                                onNavigateToPeriodCalc = { currentScreen = "period_calc"},
+                                onNavigateToOrbitalXferCalc = { currentScreen = "orbital_xfer"})
 
                         }
                         "burn_time" -> {
@@ -46,6 +46,10 @@ class MainActivity : ComponentActivity() {
 
                         "period_calc" -> {
                             PeriodCalculatorScreen(onBackToMenu = { currentScreen = "menu"})
+                        }
+
+                        "orbital_xfer" -> {
+                            OrbitalXferCalculator(onBackToMenu = { currentScreen = "menu"})
                         }
 
                         else -> {

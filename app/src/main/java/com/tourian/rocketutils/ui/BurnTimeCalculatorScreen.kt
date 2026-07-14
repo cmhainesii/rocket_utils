@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,13 +38,15 @@ import java.util.Locale
 @Composable
 fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
 
-    var days by remember { mutableStateOf("") }
+var days by remember { mutableStateOf("") }
     var hours by remember { mutableStateOf("") }
     var minutes by remember { mutableStateOf("") }
     var seconds by remember { mutableStateOf("") }
 
     val defaultResultText = stringResource(R.string.default_text_full_burn_calc)
     var resultText by remember { mutableStateOf(defaultResultText)}
+
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = Modifier
@@ -61,7 +64,7 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(onClick = onBackToMenu) {
-                Text(stringResource(R.string.label_button_back))
+            Text(stringResource(R.string.label_button_back))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(stringResource(R.string.title_burn_time_calc),
@@ -119,6 +122,7 @@ fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
         // --- Calculate Trigger ---
         Button(
             onClick = {
+                keyboardController?.hide()
 
                 val d = days.toIntOrNull() ?: 0
                 val h = hours.toIntOrNull() ?: 0
