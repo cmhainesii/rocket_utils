@@ -1,5 +1,8 @@
-package com.tourian.rocketutils.ui
+package com.tourian.rocketutils.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,13 +34,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.CelestialBody
 import com.tourian.rocketutils.objects.ThousandsSeparatorTransformation
+import com.tourian.rocketutils.ui.components.ResultRow
+import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import java.util.Locale
 import kotlin.math.abs
@@ -46,10 +49,14 @@ import kotlin.math.sqrt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrbitalXferCalculator(onBackToMenu: () -> Unit ) {
+fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
 
     var initialAltitude by remember { mutableStateOf("") }
     var targetAltitude by remember { mutableStateOf("") }
+
+
+
+
     var selectedBody by remember { mutableStateOf(CelestialBody.KERBIN)}
     var dropdownExpanded by remember { mutableStateOf(false) }
 
@@ -75,7 +82,9 @@ fun OrbitalXferCalculator(onBackToMenu: () -> Unit ) {
                 Text(stringResource(R.string.label_button_back))
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            // The Floating Rocket!
+            RocketEmoji()
 
             Text(stringResource(R.string.heading_orbital_xfer),
                 style = MaterialTheme.typography.headlineSmall)
@@ -195,51 +204,34 @@ fun OrbitalXferCalculator(onBackToMenu: () -> Unit ) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Result Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        AnimatedVisibility(
+            visible = calculationResult != null,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2})
         ) {
-            val result = calculationResult
-            if (result == null) {
-                Text("<Insert Intelligent Comment Here>",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyLarge)
-            } else {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ResultRow("Injection Burn:", result.dv1)
-                    ResultRow("Circularization Burn:", result.dv2)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    ResultRow("Total dV Required:", result.total)
+            // Result Card
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                // Safely read the non-null state
+                calculationResult?.let { result ->
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ResultRow("Injection Burn:", result.dv1)
+                        ResultRow("Circularization Burn:", result.dv2)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        ResultRow("Total dV Required:", result.total)
+                    }
                 }
             }
         }
 
 
-    }
-}
-
-@Composable
-fun ResultRow(label: String, value: String, isBold: Boolean = false) {
-    val weight = if (isBold) FontWeight.Bold else FontWeight.Normal
-
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1.2f), // Adjust weights to change column widths
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = weight
-        )
-        Text(
-            text = value,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = weight
-        )
     }
 }
 
@@ -254,6 +246,7 @@ data class CalculationResult(
 @Composable
 fun OrbitalXferPreview() {
     RocketUtilsTheme {
-        OrbitalXferCalculator(onBackToMenu = {})
+        OrbitalXferCalcScreen(onBackToMenu = {})
     }
 }
+

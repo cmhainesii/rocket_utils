@@ -1,4 +1,4 @@
-package com.tourian.rocketutils.ui
+package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

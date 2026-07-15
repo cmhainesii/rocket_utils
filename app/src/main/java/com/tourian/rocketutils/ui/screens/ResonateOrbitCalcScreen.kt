@@ -1,4 +1,4 @@
-package com.tourian.rocketutils.ui
+package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,10 +31,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.TimeHolder
+import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 
 @Composable
-fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
+fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
     // State variables for inputs
     var days by remember { mutableStateOf("") }
     var hours by remember { mutableStateOf("") }
@@ -66,7 +66,8 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
             Button(onClick = onBackToMenu) {
                 Text(stringResource(R.string.label_button_back))
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            RocketEmoji()
             Text(stringResource(R.string.title_resonate_orbit_calculator),
                 style = MaterialTheme.typography.headlineSmall)
         }
@@ -182,8 +183,8 @@ fun OrbitCalculatorScreen(onBackToMenu: () -> Unit) {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun OrbitCalcPreview() {
+fun ResonateOrbitCalcPreview() {
     RocketUtilsTheme {
-        OrbitCalculatorScreen(onBackToMenu = {})
+        ResonateOrbitCalcScreen(onBackToMenu = {})
     }
 }

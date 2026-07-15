@@ -1,5 +1,8 @@
-package com.tourian.rocketutils.ui
+package com.tourian.rocketutils.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,19 +34,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.TimeHolder
+import com.tourian.rocketutils.ui.components.ResultRow
+import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import java.util.Locale
 
 @Composable
-fun BurnTimeCalculatorScreen(onBackToMenu: () -> Unit) {
+fun BurnTimeCalcScreen(onBackToMenu: () -> Unit) {
 
 var days by remember { mutableStateOf("") }
     var hours by remember { mutableStateOf("") }
     var minutes by remember { mutableStateOf("") }
     var seconds by remember { mutableStateOf("") }
 
-    val defaultResultText = stringResource(R.string.default_text_full_burn_calc)
-    var resultText by remember { mutableStateOf(defaultResultText)}
+    var burnResult by remember { mutableStateOf<BurnResult?>(null) }
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -66,7 +69,11 @@ var days by remember { mutableStateOf("") }
             Button(onClick = onBackToMenu) {
             Text(stringResource(R.string.label_button_back))
             }
-            Spacer(modifier = Modifier.width(16.dp))
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            RocketEmoji()
+
             Text(stringResource(R.string.title_burn_time_calc),
                 style = MaterialTheme.typography.headlineSmall)
         }
@@ -136,53 +143,72 @@ var days by remember { mutableStateOf("") }
 
                 val isOdd = fullBurnSeconds % 2 != 0
                 val halfSecDecimal = if (isOdd) ".5" else ""
-                val formattedSecondsLine =
+                val formattedSeconds =
                     String.format(Locale.US,
                         "%,d",
-                        burnStartSeconds) + halfSecDecimal
+                        burnStartSeconds) + halfSecDecimal + " seconds"
+
 
                 val rawTimeStr = burnTime.toFormattedString()
-                val formattedTimeLine = if (isOdd) {
+                val formattedTime = if (isOdd) {
                     rawTimeStr.dropLast(1) + ".5s"
                 } else {
                     rawTimeStr
                 }
 
 
-                resultText = """
-                    Start Burn At: T - $formattedSecondsLine seconds
-                    $formattedTimeLine
-                """.trimIndent()
-                //resultText = "Start burn at: T - $burnStartSeconds seconds"
+                burnResult = BurnResult(
+                    seconds = formattedSeconds,
+                    time = formattedTime
+                )
+
+
+
 
 
 
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Calculate Burn Start Time")
+            Text(stringResource(R.string.label_button_calculate))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        AnimatedVisibility(
+            visible = burnResult != null,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
         ) {
-            Text(
-                text = resultText,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge
-            )
+
+            burnResult?.let { result ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors =
+                        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ResultRow("Start burn at:", result.seconds)
+                        ResultRow("Formatted Time: ", result.time)
+                    }
+                }
+            }
+
         }
     }
 }
+
+data class BurnResult(
+    val seconds: String,
+    val time: String
+)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun BurnTimeCalcPreview() {
     RocketUtilsTheme{
-        BurnTimeCalculatorScreen(onBackToMenu = {})
+        BurnTimeCalcScreen(onBackToMenu = {})
     }
 }

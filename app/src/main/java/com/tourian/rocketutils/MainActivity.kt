@@ -11,11 +11,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.tourian.rocketutils.ui.BurnTimeCalculatorScreen
-import com.tourian.rocketutils.ui.MainMenuScreen
-import com.tourian.rocketutils.ui.OrbitCalculatorScreen
-import com.tourian.rocketutils.ui.OrbitalXferCalculator
-import com.tourian.rocketutils.ui.PeriodCalculatorScreen
+import com.tourian.rocketutils.ui.screens.BurnTimeCalcScreen
+import com.tourian.rocketutils.ui.screens.MainMenuScreen
+import com.tourian.rocketutils.ui.screens.ResonateOrbitCalcScreen
+import com.tourian.rocketutils.ui.screens.OrbitalXferCalcScreen
+import com.tourian.rocketutils.ui.screens.OrbitalPeriodCalcScreen
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 
 class MainActivity : ComponentActivity() {
@@ -41,19 +41,19 @@ class MainActivity : ComponentActivity() {
 
                         }
                         "burn_time" -> {
-                            BurnTimeCalculatorScreen(onBackToMenu = { currentScreen = "menu" })
+                            BurnTimeCalcScreen(onBackToMenu = { currentScreen = "menu" })
                         }
 
                         "period_calc" -> {
-                            PeriodCalculatorScreen(onBackToMenu = { currentScreen = "menu"})
+                            OrbitalPeriodCalcScreen(onBackToMenu = { currentScreen = "menu"})
                         }
 
                         "orbital_xfer" -> {
-                            OrbitalXferCalculator(onBackToMenu = { currentScreen = "menu"})
+                            OrbitalXferCalcScreen(onBackToMenu = { currentScreen = "menu"})
                         }
 
                         else -> {
-                            OrbitCalculatorScreen(onBackToMenu = { currentScreen = "menu" })
+                            ResonateOrbitCalcScreen(onBackToMenu = { currentScreen = "menu" })
                         }
                     }
 

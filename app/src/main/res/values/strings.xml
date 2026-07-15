@@ -16,7 +16,7 @@
     <string name="period_calc_result_default_text">Enter an altitude and press calculate. I might even print out the result.</string>
     <string name="label_orbital_period_calculator">Orbital Period</string>
     <string name="button_label_orbital_period_calculator">Orbital Period Calculator</string>
-    <string name="label_period_calc_altitude">Altitude (meters)</string>
+    <string name="label_period_calc_altitude">Altitude</string>
     <string name="heading_orbital_xfer">Orbital Transfer</string>
     <string name="label_parent_body">Parent Body</string>
     <string name="label_intial_altitude">Initial Altitude</string>

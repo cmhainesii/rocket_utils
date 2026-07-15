@@ -1,4 +1,4 @@
-package com.tourian.rocketutils.ui
+package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -21,6 +21,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,15 +40,17 @@ import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.CelestialBody
 import com.tourian.rocketutils.objects.ThousandsSeparatorTransformation
 import com.tourian.rocketutils.objects.TimeHolder
+import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PeriodCalculatorScreen(onBackToMenu: () -> Unit) {
+fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
     // Core states
     var altitudeInput by remember { mutableStateOf("") }
     var selectedBody by remember { mutableStateOf(CelestialBody.KERBIN)}
+    var kilometers by remember { mutableStateOf(false) }
 
     // Tracks whether the dropdown list is currently popped open or closed
     var dropdownExpanded by remember { mutableStateOf(false) }
@@ -72,7 +76,9 @@ fun PeriodCalculatorScreen(onBackToMenu: () -> Unit) {
             Button(onClick = onBackToMenu) {
                 Text(stringResource(R.string.label_button_back))
             }
-            Spacer(modifier = Modifier.width(16.dp))
+
+            Spacer(modifier = Modifier.weight(1f))
+            RocketEmoji()
             Text(stringResource(R.string.label_orbital_period_calculator),
                 style = MaterialTheme.typography.headlineSmall)
         }
@@ -130,13 +136,40 @@ fun PeriodCalculatorScreen(onBackToMenu: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = kilometers,
+                    onValueChange = { kilometers = it },
+                    role = Role.Switch // Tells accessibility tools this acts like a switch
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Input in Kilometers (km)?",
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+            Switch( checked = kilometers,
+                onCheckedChange = null
+            )
+        }
+
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // Calculate execution
         Button(
             onClick = {
                 keyboardController?.hide()
-                val alt = altitudeInput.toDoubleOrNull() ?: 0.0
+                var alt = altitudeInput.toDoubleOrNull() ?: 0.0
+                if (kilometers) {
+                    alt *= 1000
+                }
 
                 val periodSeconds = selectedBody.calculateOrbitalPeriod(alt)
 
@@ -144,7 +177,7 @@ fun PeriodCalculatorScreen(onBackToMenu: () -> Unit) {
                 val secondsFormatted =
                     String.format(Locale.US, "%,.4f", periodSeconds)
                 val altitudeFormatted =
-                    String.format(Locale.US, "%,d", altitudeInput.ifBlank { "0" }.toInt())
+                    String.format(Locale.US, "%,.0f", alt)
 
                 resultText = """
                     Parent Body: ${selectedBody.displayName}
@@ -178,8 +211,8 @@ fun PeriodCalculatorScreen(onBackToMenu: () -> Unit) {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun PeriodCalculatorScreenPreview() {
+fun OrbitalPeriodCalcScreenPreview() {
     RocketUtilsTheme{
-        PeriodCalculatorScreen(onBackToMenu = {})
+        OrbitalPeriodCalcScreen(onBackToMenu = {})
     }
 }
