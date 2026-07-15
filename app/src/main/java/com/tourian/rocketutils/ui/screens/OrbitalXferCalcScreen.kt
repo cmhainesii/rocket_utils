@@ -208,8 +208,13 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             onClick = {
 
                 keyboardController?.hide()
-                val initialAlt = initialAltitude.toDoubleOrNull() ?: 0.0
-                val targetAlt = targetAltitude.toDoubleOrNull() ?: 0.0
+                var initialAlt = initialAltitude.toDoubleOrNull() ?: 0.0
+                var targetAlt = targetAltitude.toDoubleOrNull() ?: 0.0
+
+                if (kilometers) {
+                    initialAlt *= 1000
+                    targetAlt *= 1000
+                }
 
 
                 val r1 = selectedBody.radiusMeters + initialAlt
