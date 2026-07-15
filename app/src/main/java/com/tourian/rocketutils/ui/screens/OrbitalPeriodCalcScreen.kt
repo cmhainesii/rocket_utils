@@ -1,5 +1,9 @@
 package com.tourian.rocketutils.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,6 +45,7 @@ import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.CelestialBody
 import com.tourian.rocketutils.objects.ThousandsSeparatorTransformation
 import com.tourian.rocketutils.objects.TimeHolder
+import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import java.util.Locale
@@ -51,11 +57,12 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
     var altitudeInput by remember { mutableStateOf("") }
     var selectedBody by remember { mutableStateOf(CelestialBody.KERBIN)}
     var kilometers by remember { mutableStateOf(false) }
+    var orbitalPeriodResult by remember { mutableStateOf<OrbitalPeriodResult?>(null)}
 
     // Tracks whether the dropdown list is currently popped open or closed
     var dropdownExpanded by remember { mutableStateOf(false) }
-    val resultDefaultText = stringResource(R.string.period_calc_result_default_text)
-    var resultText by remember { mutableStateOf(resultDefaultText) }
+
+
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -85,58 +92,99 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                stringResource(R.string.form_description_orbital_period),
+                style = MaterialTheme.typography.bodyLarge)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+
+
         // The parent body dropdown form
         ExposedDropdownMenuBox(
             expanded = dropdownExpanded,
             onExpandedChange = { dropdownExpanded = !dropdownExpanded },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            OutlinedTextField(
-                value = selectedBody.displayName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.label_parent_body))},
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)},
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                modifier = Modifier
-                    .menuAnchor(
-                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                        enabled = true
-                    )
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = dropdownExpanded,
-                onDismissRequest = { dropdownExpanded = false }
+            Row(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Dynamically loops through every single item inside the enum class
-                CelestialBody.entries.forEach { body ->
-                    DropdownMenuItem(
-                        text = { Text(body.displayName)},
-                        onClick = {
-                            selectedBody = body         // Update state to the chosen planet
-                            dropdownExpanded = false    // Close the drawer
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
+                OutlinedTextField(
+                    value = selectedBody.displayName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.label_parent_body))},
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)},
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier
+                        .menuAnchor(
+                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            enabled = true
+                        ).weight(1f)
+
+
+                )
+                ExposedDropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false }
+                ) {
+                    // Dynamically loops through every single item inside the enum class
+                    CelestialBody.entries.forEach { body ->
+                        DropdownMenuItem(
+                            text = { Text(body.displayName)},
+                            onClick = {
+                                selectedBody = body         // Update state to the chosen planet
+                                dropdownExpanded = false    // Close the drawer
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
                 }
             }
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Altitude input field.
-        OutlinedTextField(
-            value = altitudeInput,
-            onValueChange = { input -> altitudeInput = input.filter { it.isDigit() } },
-            label = { Text(stringResource(R.string.label_period_calc_altitude))},
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            visualTransformation = ThousandsSeparatorTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            OutlinedTextField(
+                value = altitudeInput,
+                onValueChange = { input -> altitudeInput = input.filter { it.isDigit() } },
+                label = { Text(stringResource(R.string.label_period_calc_altitude))},
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = ThousandsSeparatorTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.padding(4.dp))
+
+
+            val unitLabel = if (kilometers) {
+                "km"
+            } else {
+                "m"
+            }
+
+            Text(unitLabel,
+                style = MaterialTheme.typography.bodyMedium)
+
+
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier
@@ -149,7 +197,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Input in Kilometers (km)?",
+                text = stringResource(R.string.label_kilometers_switch),
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -175,17 +223,14 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
 
                 val timeResult = TimeHolder.fromSeconds(periodSeconds.toInt())
                 val secondsFormatted =
-                    String.format(Locale.US, "%,.4f", periodSeconds)
-                val altitudeFormatted =
-                    String.format(Locale.US, "%,.0f", alt)
+                    String.format(Locale.US, "%,.4f seconds", periodSeconds)
 
-                resultText = """
-                    Parent Body: ${selectedBody.displayName}
-                    Apoapsis/Periapsis/Altitude: $altitudeFormatted meters
-                    Calculated Period:
-                    ${timeResult.toFormattedString()}
-                    (${secondsFormatted} seconds)
-                """.trimIndent()
+
+                orbitalPeriodResult = OrbitalPeriodResult(
+                    secondsFormatted,
+                    timeResult.toFormattedString()
+                )
+
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -194,20 +239,36 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Output display card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        AnimatedVisibility(
+            visible = orbitalPeriodResult != null,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
         ) {
-            Text(
-                text = resultText,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
+            {
+                orbitalPeriodResult?.let { result ->
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ResultRow("Orbital Period:", result.time)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        ResultRow("", result.seconds)
+                    }
+                }
+            }
         }
+
     }
 
 }
+
+data class OrbitalPeriodResult(
+    val seconds: String,
+    val time: String
+)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

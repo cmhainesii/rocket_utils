@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -24,6 +26,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -53,6 +57,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
 
     var initialAltitude by remember { mutableStateOf("") }
     var targetAltitude by remember { mutableStateOf("") }
+    var kilometers by remember { mutableStateOf(false) }
 
 
 
@@ -134,14 +139,57 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = initialAltitude,
-            onValueChange = { input -> initialAltitude = input.filter { it.isDigit() }},
-            label = {Text(stringResource(R.string.label_intial_altitude))},
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            visualTransformation = ThousandsSeparatorTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = kilometers,
+                    onValueChange = { kilometers = it },
+                    role = Role.Switch // Tells accessibility tools this acts like a switch
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.label_kilometers_switch),
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+            Switch( checked = kilometers,
+                onCheckedChange = null
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            OutlinedTextField(
+                value = initialAltitude,
+                onValueChange = { input -> initialAltitude = input.filter { it.isDigit() }},
+                label = {Text(stringResource(R.string.label_intial_altitude))},
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = ThousandsSeparatorTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+            var unitLabel: String
+            if (kilometers) {
+                unitLabel = "km"
+            }
+            else {
+                unitLabel = "m"
+            }
+
+            Text(unitLabel,
+                style = MaterialTheme.typography.bodyLarge)
+        }
+
 
         Spacer(modifier = Modifier.height(8.dp))
 

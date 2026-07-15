@@ -1,5 +1,8 @@
 package com.tourian.rocketutils.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -31,8 +35,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.TimeHolder
+import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
+import java.util.Locale
 
 @Composable
 fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
@@ -41,14 +47,11 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
     var hours by remember { mutableStateOf("") }
     var minutes by remember { mutableStateOf("") }
     var seconds by remember { mutableStateOf("") }
-
     var numSatellites by remember { mutableStateOf( "" ) }
 
-    val keyboardController = LocalSoftwareKeyboardController.current
+    var resonateOrbitResult by remember { mutableStateOf<ResonateOrbitResult?>(null) }
 
-    // State variable for the final calculation readout
-    val defaultResultText = stringResource(R.string.default_result_text)
-    var resultText by remember { mutableStateOf(defaultResultText) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = Modifier
@@ -73,6 +76,18 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                "Desired orbital period:",
+                style = MaterialTheme.typography.bodyLarge)
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Input Grid
         // Row 1: Days and Hours side by side
@@ -116,6 +131,13 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Number of satellites:",
+                style = MaterialTheme.typography.bodyLarge)
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+
         // Row 3: Number of satellites
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
@@ -152,12 +174,12 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
                 val lowResonateSeconds = seconds * (num - 1) / num
                 val lowResonateOrbit = TimeHolder.fromSeconds(lowResonateSeconds)
 
-                resultText = """
-                    Target Period: ${input.toFormattedString()} 
-                    
-                    ${num+1}/${num} Ratio: ${highResonateOrbit.toFormattedString()}
-                    ${num-1}/${num} Ratio: ${lowResonateOrbit.toFormattedString()}
-                """.trimIndent()
+                resonateOrbitResult = ResonateOrbitResult(
+                    input.toFormattedString(),
+                    lowResonateOrbit.toFormattedString(),
+                    highResonateOrbit.toFormattedString(),
+                    num
+                )
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -167,19 +189,42 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         // --- Output Display ---
+
+        AnimatedVisibility(
+            visible = resonateOrbitResult != null,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2})
+        ) {
+
+        }
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors =
                 CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Text(
-                text = resultText,
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge
-            )
+            resonateOrbitResult?.let { result ->
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val lowOrbitLabel = String.format(Locale.US, "${result.numSatellites-1}/${result.numSatellites} Orbit:")
+                    val highOrbitLabel = String.format(Locale.US, "${result.numSatellites+1}/${result.numSatellites} Orbit:")
+
+                    ResultRow("Target Period:", result.desiredPeriod)
+                    ResultRow(lowOrbitLabel, result.lowResonatePeriod)
+                    ResultRow(highOrbitLabel, result.highResonatePeriod)
+                }
+
+            }
         }
     }
 }
+
+data class ResonateOrbitResult(
+    val desiredPeriod: String,
+    val lowResonatePeriod: String,
+    val highResonatePeriod: String,
+    val numSatellites: Int
+)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
