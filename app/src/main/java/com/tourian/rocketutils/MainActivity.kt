@@ -17,8 +17,12 @@ import com.tourian.rocketutils.ui.screens.ResonateOrbitCalcScreen
 import com.tourian.rocketutils.ui.screens.OrbitalXferCalcScreen
 import com.tourian.rocketutils.ui.screens.OrbitalPeriodCalcScreen
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
+import com.tourian.rocketutils.ui.viewmodels.BurnTimeViewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val burnTimeViewModel = BurnTimeViewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -34,14 +38,15 @@ class MainActivity : ComponentActivity() {
                     when (currentScreen) {
                         "menu" -> {
                             MainMenuScreen(
-                                onNavigateToCalc = { currentScreen = "calculator" },
+                                onNavigateToCalc = { currentScreen = "resonate_calc" },
                                 onNavigateToBurnCalc = { currentScreen = "burn_time" },
                                 onNavigateToPeriodCalc = { currentScreen = "period_calc"},
                                 onNavigateToOrbitalXferCalc = { currentScreen = "orbital_xfer"})
 
                         }
                         "burn_time" -> {
-                            BurnTimeCalcScreen(onBackToMenu = { currentScreen = "menu" })
+                            BurnTimeCalcScreen(onBackToMenu = { currentScreen = "menu" },
+                                viewModel = burnTimeViewModel)
                         }
 
                         "period_calc" -> {
@@ -52,8 +57,16 @@ class MainActivity : ComponentActivity() {
                             OrbitalXferCalcScreen(onBackToMenu = { currentScreen = "menu"})
                         }
 
-                        else -> {
+                        "resonate_calc" -> {
                             ResonateOrbitCalcScreen(onBackToMenu = { currentScreen = "menu" })
+                        }
+                        else -> {
+                            MainMenuScreen(
+                                onNavigateToCalc = { currentScreen = "calculator" },
+                                onNavigateToBurnCalc = { currentScreen = "burn_time" },
+                                onNavigateToPeriodCalc = { currentScreen = "period_calc" },
+                                onNavigateToOrbitalXferCalc = { currentScreen = "orbital_xfer" }
+                            )
                         }
                     }
 

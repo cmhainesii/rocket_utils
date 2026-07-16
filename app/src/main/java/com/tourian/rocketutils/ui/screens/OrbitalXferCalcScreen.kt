@@ -97,6 +97,18 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                stringResource(R.string.form_description_orbital_period),
+                style = MaterialTheme.typography.bodyLarge)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         // Input fields
         // Select parent body
         ExposedDropdownMenuBox(
@@ -174,33 +186,51 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
                 label = {Text(stringResource(R.string.label_intial_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.weight(1f)
             )
 
             Spacer(modifier = Modifier.width(4.dp))
-            var unitLabel: String
-            if (kilometers) {
-                unitLabel = "km"
+
+            val unitLabel = if (kilometers) {
+                "km"
             }
             else {
-                unitLabel = "m"
+                "m"
             }
 
             Text(unitLabel,
-                style = MaterialTheme.typography.bodyLarge)
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 4.dp))
         }
 
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = targetAltitude,
-            onValueChange = { input -> targetAltitude = input.filter { it.isDigit() }},
-            label = { Text(stringResource(R.string.label_target_altitude))},
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            visualTransformation = ThousandsSeparatorTransformation(),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom) {
+
+            OutlinedTextField(
+                value = targetAltitude,
+                onValueChange = { input -> targetAltitude = input.filter { it.isDigit() }},
+                label = { Text(stringResource(R.string.label_target_altitude))},
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = ThousandsSeparatorTransformation(),
+                modifier = Modifier.weight(1f)
+            )
+
+            val unitLabel = if(kilometers) {
+                "km"
+            } else {
+                "m"
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(unitLabel,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 4.dp))
+
+        }
+
+
 
         Spacer(modifier = Modifier.height(24.dp))
 

@@ -195,25 +195,32 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2})
         ) {
 
-        }
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            resonateOrbitResult?.let { result ->
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val lowOrbitLabel = String.format(Locale.US, "${result.numSatellites-1}/${result.numSatellites} Orbit:")
-                    val highOrbitLabel = String.format(Locale.US, "${result.numSatellites+1}/${result.numSatellites} Orbit:")
 
-                    ResultRow("Target Period:", result.desiredPeriod)
-                    ResultRow(lowOrbitLabel, result.lowResonatePeriod)
-                    ResultRow(highOrbitLabel, result.highResonatePeriod)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                resonateOrbitResult?.let { result ->
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val lowOrbitLabel = String.format(
+                            Locale.US,
+                            "${result.numSatellites - 1}/${result.numSatellites} Orbit:"
+                        )
+                        val highOrbitLabel = String.format(
+                            Locale.US,
+                            "${result.numSatellites + 1}/${result.numSatellites} Orbit:"
+                        )
+
+                        ResultRow("Target Period:", result.desiredPeriod)
+                        ResultRow(lowOrbitLabel, result.lowResonatePeriod)
+                        ResultRow(highOrbitLabel, result.highResonatePeriod)
+                    }
+
                 }
-
             }
         }
     }

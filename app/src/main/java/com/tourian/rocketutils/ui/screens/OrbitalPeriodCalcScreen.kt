@@ -164,9 +164,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
                 label = { Text(stringResource(R.string.label_period_calc_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier = Modifier.weight(1f)
             )
 
             Spacer(modifier = Modifier.padding(4.dp))
@@ -179,7 +177,8 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
             }
 
             Text(unitLabel,
-                style = MaterialTheme.typography.bodyMedium)
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(bottom = 4.dp))
 
 
         }

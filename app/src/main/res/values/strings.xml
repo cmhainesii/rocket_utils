@@ -23,5 +23,5 @@
     <string name="label_target_altitude">Target Altitude</string>
     <string name="label_orbital_xfer_button">Orbital Transfer Calculator</string>
     <string name="label_kilometers_switch">Kilometers?</string>
-    <string name="form_description_orbital_period">Select parent body and altitude:</string>
+    <string name="form_description_orbital_period">Select planetary body and altitude:</string>
 </resources>
