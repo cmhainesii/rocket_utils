@@ -22,31 +22,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tourian.rocketutils.R
-import com.tourian.rocketutils.objects.TimeHolder
 import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
-import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.BurnTimeViewModel
-import java.util.Locale
 
 @Composable
 fun BurnTimeCalcScreen(
     onBackToMenu: () -> Unit,
-    viewModel: BurnTimeViewModel
+    viewModel: BurnTimeViewModel = viewModel()
     ) {
 
 
@@ -221,10 +212,10 @@ data class BurnResult(
     val time: String
 )
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun BurnTimeCalcPreview() {
-    RocketUtilsTheme{
-        BurnTimeCalcScreen(onBackToMenu = {}, viewModel = BurnTimeViewModel() )
-    }
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun BurnTimeCalcPreview() {
+//    RocketUtilsTheme{
+//        BurnTimeCalcScreen(onBackToMenu = {}, viewModel = BurnTimeViewModel() )
+//    }
+//}

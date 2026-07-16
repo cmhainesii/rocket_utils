@@ -39,25 +39,22 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.CelestialBody
 import com.tourian.rocketutils.objects.ThousandsSeparatorTransformation
-import com.tourian.rocketutils.objects.TimeHolder
 import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
-import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
-import java.util.Locale
+import com.tourian.rocketutils.ui.viewmodels.OrbitalPeriodViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
-    // Core states
-    var altitudeInput by remember { mutableStateOf("") }
-    var selectedBody by remember { mutableStateOf(CelestialBody.KERBIN)}
-    var kilometers by remember { mutableStateOf(false) }
-    var orbitalPeriodResult by remember { mutableStateOf<OrbitalPeriodResult?>(null)}
+fun OrbitalPeriodCalcScreen(
+    onBackToMenu: () -> Unit,
+    viewModel: OrbitalPeriodViewModel = viewModel()
+    ) {
+
 
     // Tracks whether the dropdown list is currently popped open or closed
     var dropdownExpanded by remember { mutableStateOf(false) }
@@ -117,7 +114,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
-                    value = selectedBody.displayName,
+                    value = viewModel.selectedPlanetaryBody.displayName,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.label_parent_body))},
@@ -141,7 +138,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
                         DropdownMenuItem(
                             text = { Text(body.displayName)},
                             onClick = {
-                                selectedBody = body         // Update state to the chosen planet
+                                viewModel.onSelectedPlanetaryBodyChange(body)         // Update state to the chosen planet
                                 dropdownExpanded = false    // Close the drawer
                             },
                             contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -159,8 +156,8 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
             verticalAlignment = Alignment.Bottom
         ) {
             OutlinedTextField(
-                value = altitudeInput,
-                onValueChange = { input -> altitudeInput = input.filter { it.isDigit() } },
+                value = viewModel.altitude,
+                    onValueChange = { viewModel.onAltitudeChange(it) },
                 label = { Text(stringResource(R.string.label_period_calc_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
@@ -170,7 +167,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
             Spacer(modifier = Modifier.padding(4.dp))
 
 
-            val unitLabel = if (kilometers) {
+            val unitLabel = if (viewModel.kilometers) {
                 "km"
             } else {
                 "m"
@@ -189,8 +186,8 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .toggleable(
-                    value = kilometers,
-                    onValueChange = { kilometers = it },
+                    value = viewModel.kilometers,
+                    onValueChange = { viewModel.onKilometersChange(it) },
                     role = Role.Switch // Tells accessibility tools this acts like a switch
                 ),
             verticalAlignment = Alignment.CenterVertically
@@ -201,7 +198,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            Switch( checked = kilometers,
+            Switch( checked = viewModel.kilometers,
                 onCheckedChange = null
             )
         }
@@ -213,22 +210,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
         Button(
             onClick = {
                 keyboardController?.hide()
-                var alt = altitudeInput.toDoubleOrNull() ?: 0.0
-                if (kilometers) {
-                    alt *= 1000
-                }
-
-                val periodSeconds = selectedBody.calculateOrbitalPeriod(alt)
-
-                val timeResult = TimeHolder.fromSeconds(periodSeconds.toInt())
-                val secondsFormatted =
-                    String.format(Locale.US, "%,.4f seconds", periodSeconds)
-
-
-                orbitalPeriodResult = OrbitalPeriodResult(
-                    secondsFormatted,
-                    timeResult.toFormattedString()
-                )
+                viewModel.calculateOrbitalPeriod()
 
             },
             modifier = Modifier.fillMaxWidth()
@@ -239,7 +221,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
 
         AnimatedVisibility(
-            visible = orbitalPeriodResult != null,
+            visible = viewModel.orbitalPeriod != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
         ) {
             Card(
@@ -247,7 +229,7 @@ fun OrbitalPeriodCalcScreen(onBackToMenu: () -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
             {
-                orbitalPeriodResult?.let { result ->
+                viewModel.orbitalPeriod?.let { result ->
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -269,10 +251,10 @@ data class OrbitalPeriodResult(
     val time: String
 )
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun OrbitalPeriodCalcScreenPreview() {
-    RocketUtilsTheme{
-        OrbitalPeriodCalcScreen(onBackToMenu = {})
-    }
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun OrbitalPeriodCalcScreenPreview() {
+//    RocketUtilsTheme{
+//        OrbitalPeriodCalcScreen(onBackToMenu = {}, null)
+//    }
+//}
