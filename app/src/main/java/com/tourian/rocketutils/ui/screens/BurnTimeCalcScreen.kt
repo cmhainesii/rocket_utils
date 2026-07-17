@@ -27,17 +27,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
+import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.BurnTimeViewModel
 
 @Composable
-fun BurnTimeCalcScreen(
+fun BurnTimeCalcScreenContent(
+    days: String,
+    onDaysChanged: (String) -> Unit,
+    hours: String,
+    onHoursChanged: (String) -> Unit,
+    minutes: String,
+    onMinutesChanged: (String) -> Unit,
+    seconds: String,
+    onSecondsChanged: (String) -> Unit,
+    burnResult: BurnResult?,
+    onCalculateButtonPressed: () -> Unit,
     onBackToMenu: () -> Unit,
-    viewModel: BurnTimeViewModel = viewModel()
     ) {
 
 
@@ -88,16 +99,16 @@ fun BurnTimeCalcScreen(
             modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
-                value = viewModel.days,
-                onValueChange = { viewModel.onDaysChange(it) },
+                value = days,
+                onValueChange = { onDaysChanged(it) },
                 label = { Text(stringResource(R.string.label_days)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
 
             OutlinedTextField(
-                value = viewModel.hours,
-                onValueChange = { viewModel.onHoursChange(it) },
+                value = hours,
+                onValueChange = { onHoursChanged(it) },
                 label = { Text(stringResource(R.string.label_hours))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -111,16 +122,16 @@ fun BurnTimeCalcScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
-                value = viewModel.minutes,
-                onValueChange = { viewModel.onMinutesChange(it) },
+                value = minutes,
+                onValueChange = { onMinutesChanged(it) },
                 label = { Text(stringResource(R.string.label_mins))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
 
             OutlinedTextField(
-                value = viewModel.seconds,
-                onValueChange = { viewModel.onSecondsChange(it) },
+                value = seconds,
+                onValueChange = { onSecondsChanged(it) },
                 label = { Text( stringResource( R.string.label_secs))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -133,7 +144,8 @@ fun BurnTimeCalcScreen(
         Button(
             onClick = {
                 keyboardController?.hide()
-                viewModel.calculateBurn()
+                onCalculateButtonPressed()
+
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -143,11 +155,11 @@ fun BurnTimeCalcScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         AnimatedVisibility(
-            visible = viewModel.burnResult != null,
+            visible = burnResult != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
         ) {
 
-            viewModel.burnResult?.let { result ->
+            burnResult?.let { result ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors =
@@ -211,6 +223,50 @@ data class BurnResult(
     val seconds: String,
     val time: String
 )
+
+
+@Composable
+fun BurnTimeCalcScreen(
+    onBackToMenu: () -> Unit,
+    viewModel: BurnTimeViewModel = viewModel()
+) {
+    BurnTimeCalcScreenContent(
+        days = viewModel.days,
+        onDaysChanged = { viewModel.onDaysChange(it)},
+        hours = viewModel.hours,
+        onHoursChanged = { viewModel.onHoursChange(it)},
+        minutes = viewModel.minutes,
+        onMinutesChanged = { viewModel.onMinutesChange(it) },
+        seconds = viewModel.seconds,
+        onSecondsChanged = { viewModel.onSecondsChange(it)},
+        burnResult = viewModel.burnResult,
+        onCalculateButtonPressed = { viewModel.calculateBurn()},
+        onBackToMenu
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun BurnTimeCalcScreenPreview() {
+    RocketUtilsTheme {
+        BurnTimeCalcScreenContent(
+            days = "420",
+            onDaysChanged = {},
+            hours = "2",
+            onHoursChanged = {},
+            minutes = "16",
+            onMinutesChanged = {},
+            seconds = "69",
+            onSecondsChanged = {},
+            BurnResult(
+                "1113 seconds", "0d 5h 6m 55s"
+            ),
+            {},
+            onBackToMenu = {}
+
+        )
+    }
+}
 
 //@Preview(showBackground = true, showSystemUi = true)
 //@Composable

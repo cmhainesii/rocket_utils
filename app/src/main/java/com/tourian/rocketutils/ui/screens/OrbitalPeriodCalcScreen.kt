@@ -106,7 +106,7 @@ fun OrbitalPeriodCalcContent(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(16 .dp))
             Text(
                 stringResource(R.string.form_description_orbital_period),
                 style = MaterialTheme.typography.bodyLarge)
