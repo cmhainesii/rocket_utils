@@ -41,31 +41,33 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.CelestialBody
 import com.tourian.rocketutils.objects.ThousandsSeparatorTransformation
 import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
-import java.util.Locale
-import kotlin.math.abs
-import kotlin.math.sqrt
+import com.tourian.rocketutils.ui.viewmodels.OrbitalXferViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
-
-    var initialAltitude by remember { mutableStateOf("") }
-    var targetAltitude by remember { mutableStateOf("") }
-    var kilometers by remember { mutableStateOf(false) }
+fun OrbitalXferCalcScreenContent(
+    onBackToMenu: () -> Unit,
+    initialAltitude: String,
 
 
+) {
 
 
-    var selectedBody by remember { mutableStateOf(CelestialBody.KERBIN)}
+
+
+
+
+
     var dropdownExpanded by remember { mutableStateOf(false) }
 
-    var calculationResult by remember { mutableStateOf<CalculationResult?>(null) }
+
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -117,7 +119,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = selectedBody.displayName,
+                value = viewModel.selectedBody.displayName,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.label_parent_body))},
@@ -140,7 +142,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
                     DropdownMenuItem(
                         text = { Text(body.displayName)},
                         onClick = {
-                            selectedBody = body
+                            viewModel.onChangeSelectedBody(body)
                             dropdownExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -157,8 +159,8 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             modifier = Modifier
                 .fillMaxWidth()
                 .toggleable(
-                    value = kilometers,
-                    onValueChange = { kilometers = it },
+                    value = viewModel.kilometers,
+                    onValueChange = { viewModel.isKilometers(it) },
                     role = Role.Switch // Tells accessibility tools this acts like a switch
                 ),
             verticalAlignment = Alignment.CenterVertically
@@ -169,7 +171,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            Switch( checked = kilometers,
+            Switch( checked = viewModel.kilometers,
                 onCheckedChange = null
             )
         }
@@ -181,8 +183,8 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             verticalAlignment = Alignment.Bottom
         ) {
             OutlinedTextField(
-                value = initialAltitude,
-                onValueChange = { input -> initialAltitude = input.filter { it.isDigit() }},
+                value = viewModel.initialAltitude,
+                onValueChange = { viewModel.onInitialAltitudeChange(it) },
                 label = {Text(stringResource(R.string.label_intial_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
@@ -191,7 +193,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            val unitLabel = if (kilometers) {
+            val unitLabel = if (viewModel.kilometers) {
                 "km"
             }
             else {
@@ -210,15 +212,15 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             verticalAlignment = Alignment.Bottom) {
 
             OutlinedTextField(
-                value = targetAltitude,
-                onValueChange = { input -> targetAltitude = input.filter { it.isDigit() }},
+                value = viewModel.targetAltitude,
+                onValueChange = { viewModel.onTargetAltitudeChange(it) },
                 label = { Text(stringResource(R.string.label_target_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
                 modifier = Modifier.weight(1f)
             )
 
-            val unitLabel = if(kilometers) {
+            val unitLabel = if(viewModel.kilometers) {
                 "km"
             } else {
                 "m"
@@ -238,47 +240,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
             onClick = {
 
                 keyboardController?.hide()
-                var initialAlt = initialAltitude.toDoubleOrNull() ?: 0.0
-                var targetAlt = targetAltitude.toDoubleOrNull() ?: 0.0
-
-                if (kilometers) {
-                    initialAlt *= 1000
-                    targetAlt *= 1000
-                }
-
-
-                val r1 = selectedBody.radiusMeters + initialAlt
-                val r2 = selectedBody.radiusMeters + targetAlt
-                val a_tx = (r1 + r2) /  2.0 // Semi-major axis
-
-                val v1 = sqrt(selectedBody.mu / r1)
-                val vtx1 =
-                    sqrt(
-                        selectedBody.mu * (
-                                (2 / r1) - (1 / a_tx)
-                                )
-                    )
-                val dv1 = abs(vtx1 - v1)
-
-                val vtx2 =
-                    sqrt(
-                        selectedBody.mu * (
-                                (2 / r2) - (1 / a_tx)
-                                )
-                    )
-                val v2 = sqrt(selectedBody.mu / r2)
-                val dv2 = abs(vtx2 - v2)
-                val totalDv = dv1 + dv2
-
-                val dv1Formatted = String.format(Locale.US, "%,.2f", dv1)
-                val dv2Formatted = String.format(Locale.US, "%,.2f", dv2)
-                val totalDvFormatted = String.format(Locale.US, "%,.2f", totalDv)
-
-                calculationResult = CalculationResult(
-                    dv1 = "$dv1Formatted m/s",
-                    dv2 = "$dv2Formatted m/s",
-                    total = "$totalDvFormatted m/s"
-                )
+                viewModel.calculateResult()
 
             }
         ) {
@@ -288,7 +250,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
         Spacer(modifier = Modifier.height(24.dp))
 
         AnimatedVisibility(
-            visible = calculationResult != null,
+            visible = viewModel.orbitalXferResult != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2})
         ) {
             // Result Card
@@ -300,7 +262,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
                 )
             ) {
                 // Safely read the non-null state
-                calculationResult?.let { result ->
+                viewModel.orbitalXferResult?.let { result ->
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -318,7 +280,7 @@ fun OrbitalXferCalcScreen(onBackToMenu: () -> Unit ) {
     }
 }
 
-data class CalculationResult(
+data class OrbitalXferResult(
     val dv1: String,
     val dv2: String,
     val total: String,
@@ -329,7 +291,7 @@ data class CalculationResult(
 @Composable
 fun OrbitalXferPreview() {
     RocketUtilsTheme {
-        OrbitalXferCalcScreen(onBackToMenu = {})
+        OrbitalXferCalcScreenContent(onBackToMenu = {})
     }
 }
 

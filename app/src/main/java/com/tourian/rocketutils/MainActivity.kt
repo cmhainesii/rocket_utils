@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import com.tourian.rocketutils.ui.screens.BurnTimeCalcScreen
 import com.tourian.rocketutils.ui.screens.MainMenuScreen
 import com.tourian.rocketutils.ui.screens.OrbitalPeriodCalcScreen
-import com.tourian.rocketutils.ui.screens.OrbitalXferCalcScreen
+import com.tourian.rocketutils.ui.screens.OrbitalXferCalcScreenContent
 import com.tourian.rocketutils.ui.screens.ResonateOrbitCalcScreen
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.BurnTimeViewModel
@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         "orbital_xfer" -> {
-                            OrbitalXferCalcScreen(onBackToMenu = { currentScreen = "menu"})
+                            OrbitalXferCalcScreenContent(onBackToMenu = { currentScreen = "menu"})
                         }
 
                         "resonate_calc" -> {
