@@ -9,11 +9,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.tourian.rocketutils.ui.screens.BurnTimeCalcScreen
 import com.tourian.rocketutils.ui.screens.MainMenuScreen
 import com.tourian.rocketutils.ui.screens.OrbitalPeriodCalcScreen
+import com.tourian.rocketutils.ui.screens.OrbitalXferCalcScreen
 import com.tourian.rocketutils.ui.screens.OrbitalXferCalcScreenContent
 import com.tourian.rocketutils.ui.screens.ResonateOrbitCalcScreen
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
@@ -32,7 +34,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     // 1. Define a state tracker for which screens we are on
-                    var currentScreen by remember { mutableStateOf("menu") }
+                    var currentScreen by rememberSaveable { mutableStateOf("menu") }
 
                     // 2. Simple conditional rendering
                     when (currentScreen) {
@@ -45,8 +47,7 @@ class MainActivity : ComponentActivity() {
 
                         }
                         "burn_time" -> {
-                            BurnTimeCalcScreen(onBackToMenu = { currentScreen = "menu" },
-                                viewModel = burnTimeViewModel)
+                            BurnTimeCalcScreen(onBackToMenu = { currentScreen = "menu" })
                         }
 
                         "period_calc" -> {
@@ -54,7 +55,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         "orbital_xfer" -> {
-                            OrbitalXferCalcScreenContent(onBackToMenu = { currentScreen = "menu"})
+                            OrbitalXferCalcScreen(onBackToMenu = { currentScreen = "menu"})
                         }
 
                         "resonate_calc" -> {

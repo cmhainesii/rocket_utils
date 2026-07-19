@@ -33,23 +33,31 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tourian.rocketutils.R
 import com.tourian.rocketutils.objects.TimeHolder
 import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
+import com.tourian.rocketutils.ui.viewmodels.ResonateOrbitViewModel
 import java.util.Locale
 
 @Composable
-fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
-    // State variables for inputs
-    var days by remember { mutableStateOf("") }
-    var hours by remember { mutableStateOf("") }
-    var minutes by remember { mutableStateOf("") }
-    var seconds by remember { mutableStateOf("") }
-    var numSatellites by remember { mutableStateOf( "" ) }
-
-    var resonateOrbitResult by remember { mutableStateOf<ResonateOrbitResult?>(null) }
+fun ResonateOrbitCalcScreenContent(
+    onBackToMenu: () -> Unit,
+    days: String,
+    onDaysChanged: (String) -> Unit,
+    hours: String,
+    onHoursChanged: (String) -> Unit,
+    minutes: String,
+    onMinutesChanged: (String) -> Unit,
+    seconds: String,
+    onSecondsChanged: (String) -> Unit,
+    numSatellites: String,
+    onNumSatellitesChanged: (String) -> Unit,
+    resonateOrbitResult: ResonateOrbitResult?,
+    onCalculateButtonPressed: () -> Unit,
+    ) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -95,14 +103,14 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = days,
-                onValueChange = { input -> days = input.filter { it.isDigit() } },
+                onValueChange = { onDaysChanged(it) },
                 label = { Text(stringResource(R.string.label_days))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = hours,
-                onValueChange = { input -> hours = input.filter { it.isDigit() } },
+                onValueChange = { onHoursChanged(it) },
                 label = { Text(stringResource(R.string.label_hours))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -115,14 +123,14 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = minutes,
-                onValueChange = { input -> minutes = input.filter { it.isDigit() } },
+                onValueChange = { onMinutesChanged(it) },
                 label = { Text(stringResource(R.string.label_mins))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = seconds,
-                onValueChange = { input -> seconds = input.filter { it.isDigit() } },
+                onValueChange = { onSecondsChanged(it) },
                 label = { Text(stringResource(R.string.label_secs))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -142,7 +150,7 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 value = numSatellites,
-                onValueChange = { numSatellites = it },
+                onValueChange = { onNumSatellitesChanged(it) },
                 label = { Text(stringResource(R.string.label_number_of_satellites))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f)
@@ -157,29 +165,7 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
         Button(
             onClick = {
                 keyboardController?.hide()
-
-                // For now, we'll check if they entered anything and output the presets
-                val d = days.toIntOrNull() ?: 0
-                val h = hours.toIntOrNull() ?: 0
-                val m = minutes.toIntOrNull() ?: 0
-                val s = seconds.toIntOrNull() ?: 0
-
-                val input = TimeHolder(d, h, m, s)
-                val seconds = input.toSeconds()
-                val num = numSatellites.ifBlank { "3" }.toInt()
-
-                val highResonateSeconds = seconds * (num + 1) / num
-                val highResonateOrbit = TimeHolder.fromSeconds(highResonateSeconds)
-
-                val lowResonateSeconds = seconds * (num - 1) / num
-                val lowResonateOrbit = TimeHolder.fromSeconds(lowResonateSeconds)
-
-                resonateOrbitResult = ResonateOrbitResult(
-                    input.toFormattedString(),
-                    lowResonateOrbit.toFormattedString(),
-                    highResonateOrbit.toFormattedString(),
-                    num
-                )
+                onCalculateButtonPressed()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -224,6 +210,29 @@ fun ResonateOrbitCalcScreen(onBackToMenu: () -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun ResonateOrbitCalcScreen(
+    onBackToMenu: () -> Unit,
+    viewModel: ResonateOrbitViewModel = viewModel()
+) {
+    ResonateOrbitCalcScreenContent(
+        onBackToMenu = onBackToMenu,
+        days = viewModel.days,
+        onDaysChanged = { viewModel.onDaysChanged(it) },
+        hours = viewModel.hours,
+        onHoursChanged = { viewModel.onHoursChanged(it) },
+        minutes = viewModel.minutes,
+        onMinutesChanged = { viewModel.onMinutesChanged(it) },
+        seconds = viewModel.seconds,
+        onSecondsChanged = { viewModel.onSecondsChanged(it)},
+        numSatellites = viewModel.numSatellites,
+        onNumSatellitesChanged = { viewModel.onNumSatellitesChanged(it) },
+        resonateOrbitResult = viewModel.resonateOrbitResult,
+        onCalculateButtonPressed = { viewModel.calculateResult() }
+
+    )
 }
 
 data class ResonateOrbitResult(

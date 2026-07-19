@@ -54,16 +54,19 @@ import com.tourian.rocketutils.ui.viewmodels.OrbitalXferViewModel
 @Composable
 fun OrbitalXferCalcScreenContent(
     onBackToMenu: () -> Unit,
+    selectedBody: CelestialBody,
+    onSelectedBodyChanged: (CelestialBody) -> Unit,
     initialAltitude: String,
+    onInitialAltitudeChanged: (String) -> Unit,
+    targetAltitude: String,
+    onTargetAltitudeChanged: (String) -> Unit,
+    isKilometers: Boolean,
+    onKilometersChanged: (Boolean) -> Unit,
+    orbitalXferResult: OrbitalXferResult?,
+    calculateResult: () -> Unit,
 
 
-) {
-
-
-
-
-
-
+    ) {
 
     var dropdownExpanded by remember { mutableStateOf(false) }
 
@@ -119,7 +122,7 @@ fun OrbitalXferCalcScreenContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = viewModel.selectedBody.displayName,
+                value = selectedBody.displayName,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.label_parent_body))},
@@ -142,7 +145,7 @@ fun OrbitalXferCalcScreenContent(
                     DropdownMenuItem(
                         text = { Text(body.displayName)},
                         onClick = {
-                            viewModel.onChangeSelectedBody(body)
+                            onSelectedBodyChanged(body)
                             dropdownExpanded = false
                         },
                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -159,8 +162,8 @@ fun OrbitalXferCalcScreenContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .toggleable(
-                    value = viewModel.kilometers,
-                    onValueChange = { viewModel.isKilometers(it) },
+                    value = isKilometers,
+                    onValueChange = { onKilometersChanged(it) },
                     role = Role.Switch // Tells accessibility tools this acts like a switch
                 ),
             verticalAlignment = Alignment.CenterVertically
@@ -171,7 +174,7 @@ fun OrbitalXferCalcScreenContent(
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            Switch( checked = viewModel.kilometers,
+            Switch( checked = isKilometers,
                 onCheckedChange = null
             )
         }
@@ -183,8 +186,8 @@ fun OrbitalXferCalcScreenContent(
             verticalAlignment = Alignment.Bottom
         ) {
             OutlinedTextField(
-                value = viewModel.initialAltitude,
-                onValueChange = { viewModel.onInitialAltitudeChange(it) },
+                value = initialAltitude,
+                onValueChange = { onInitialAltitudeChanged(it) },
                 label = {Text(stringResource(R.string.label_intial_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
@@ -193,7 +196,7 @@ fun OrbitalXferCalcScreenContent(
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            val unitLabel = if (viewModel.kilometers) {
+            val unitLabel = if (isKilometers) {
                 "km"
             }
             else {
@@ -212,15 +215,15 @@ fun OrbitalXferCalcScreenContent(
             verticalAlignment = Alignment.Bottom) {
 
             OutlinedTextField(
-                value = viewModel.targetAltitude,
-                onValueChange = { viewModel.onTargetAltitudeChange(it) },
+                value = targetAltitude,
+                onValueChange = { onTargetAltitudeChanged(it) },
                 label = { Text(stringResource(R.string.label_target_altitude))},
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
                 modifier = Modifier.weight(1f)
             )
 
-            val unitLabel = if(viewModel.kilometers) {
+            val unitLabel = if(isKilometers) {
                 "km"
             } else {
                 "m"
@@ -240,7 +243,7 @@ fun OrbitalXferCalcScreenContent(
             onClick = {
 
                 keyboardController?.hide()
-                viewModel.calculateResult()
+                calculateResult()
 
             }
         ) {
@@ -250,7 +253,7 @@ fun OrbitalXferCalcScreenContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         AnimatedVisibility(
-            visible = viewModel.orbitalXferResult != null,
+            visible = orbitalXferResult != null,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2})
         ) {
             // Result Card
@@ -262,7 +265,7 @@ fun OrbitalXferCalcScreenContent(
                 )
             ) {
                 // Safely read the non-null state
-                viewModel.orbitalXferResult?.let { result ->
+                orbitalXferResult?.let { result ->
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -286,12 +289,32 @@ data class OrbitalXferResult(
     val total: String,
 )
 
+@Composable
+fun OrbitalXferCalcScreen(
+    onBackToMenu: () -> Unit,
+    viewModel: OrbitalXferViewModel = viewModel()
+) {
+    OrbitalXferCalcScreenContent(
+        onBackToMenu = onBackToMenu,
+        selectedBody = viewModel.selectedBody,
+        onSelectedBodyChanged = { viewModel.onChangeSelectedBody(it) },
+        initialAltitude = viewModel.initialAltitude,
+        onInitialAltitudeChanged = { viewModel.onInitialAltitudeChange(it) },
+        targetAltitude = viewModel.targetAltitude,
+        onTargetAltitudeChanged = { viewModel.onTargetAltitudeChange(it) },
+        isKilometers = viewModel.kilometers,
+        onKilometersChanged = { viewModel.isKilometers(it) },
+        orbitalXferResult = viewModel.orbitalXferResult,
+        calculateResult = { viewModel.calculateResult() }
+    )
+}
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun OrbitalXferPreview() {
     RocketUtilsTheme {
-        OrbitalXferCalcScreenContent(onBackToMenu = {})
+        OrbitalXferCalcScreen(onBackToMenu = {})
     }
 }
 
