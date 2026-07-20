@@ -1,12 +1,21 @@
 package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,6 +44,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -64,15 +79,17 @@ fun OrbitalXferCalcScreenContent(
     onKilometersChanged: (Boolean) -> Unit,
     orbitalXferResult: OrbitalXferResult?,
     calculateResult: () -> Unit,
-
-
-    ) {
-
+) {
     var dropdownExpanded by remember { mutableStateOf(false) }
-
-
-
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Compute live radii for the canvas visualization
+    val initialAltMeters = (initialAltitude.toDoubleOrNull() ?: 0.0) * if (isKilometers) 1000.0 else 1.0
+    val targetAltMeters = (targetAltitude.toDoubleOrNull() ?: 0.0) * if (isKilometers) 1000.0 else 1.0
+
+    val bodyRadius = selectedBody.radiusMeters
+    val r1Meters = bodyRadius + initialAltMeters
+    val r2Meters = bodyRadius + targetAltMeters
 
     Column(
         modifier = Modifier
@@ -93,14 +110,27 @@ fun OrbitalXferCalcScreenContent(
             }
 
             Spacer(modifier = Modifier.weight(1f))
-            // The Floating Rocket!
             RocketEmoji()
 
-            Text(stringResource(R.string.heading_orbital_xfer),
-                style = MaterialTheme.typography.headlineSmall)
+            Text(
+                stringResource(R.string.heading_orbital_xfer),
+                style = MaterialTheme.typography.headlineSmall
+            )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Visual Orbit Canvas placed directly inside the Column
+        OrbitalTransferCanvas(
+            bodyRadiusMeters = bodyRadius,
+            r1Meters = r1Meters,
+            r2Meters = r2Meters,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -109,13 +139,13 @@ fun OrbitalXferCalcScreenContent(
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 stringResource(R.string.form_description_orbital_period),
-                style = MaterialTheme.typography.bodyLarge)
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Input fields
-        // Select parent body
+        // Dropdown: Select Parent Body
         ExposedDropdownMenuBox(
             expanded = dropdownExpanded,
             onExpandedChange = { dropdownExpanded = !dropdownExpanded },
@@ -125,7 +155,7 @@ fun OrbitalXferCalcScreenContent(
                 value = selectedBody.displayName,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text(stringResource(R.string.label_parent_body))},
+                label = { Text(stringResource(R.string.label_parent_body)) },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
                 },
@@ -143,7 +173,7 @@ fun OrbitalXferCalcScreenContent(
             ) {
                 CelestialBody.entries.forEach { body ->
                     DropdownMenuItem(
-                        text = { Text(body.displayName)},
+                        text = { Text(body.displayName) },
                         onClick = {
                             onSelectedBodyChanged(body)
                             dropdownExpanded = false
@@ -156,15 +186,14 @@ fun OrbitalXferCalcScreenContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
+        // Switch: Kilometers Toggle
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .toggleable(
                     value = isKilometers,
                     onValueChange = { onKilometersChanged(it) },
-                    role = Role.Switch // Tells accessibility tools this acts like a switch
+                    role = Role.Switch
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -174,13 +203,15 @@ fun OrbitalXferCalcScreenContent(
             )
 
             Spacer(modifier = Modifier.weight(1f))
-            Switch( checked = isKilometers,
+            Switch(
+                checked = isKilometers,
                 onCheckedChange = null
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Initial Altitude
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Bottom
@@ -188,7 +219,7 @@ fun OrbitalXferCalcScreenContent(
             OutlinedTextField(
                 value = initialAltitude,
                 onValueChange = { onInitialAltitudeChanged(it) },
-                label = {Text(stringResource(R.string.label_intial_altitude))},
+                label = { Text(stringResource(R.string.label_intial_altitude)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
                 modifier = Modifier.weight(1f)
@@ -196,55 +227,45 @@ fun OrbitalXferCalcScreenContent(
 
             Spacer(modifier = Modifier.width(4.dp))
 
-            val unitLabel = if (isKilometers) {
-                "km"
-            }
-            else {
-                "m"
-            }
-
-            Text(unitLabel,
+            val unitLabel = if (isKilometers) "km" else "m"
+            Text(
+                unitLabel,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 4.dp))
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
         }
-
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom) {
-
+        // Target Altitude
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
             OutlinedTextField(
                 value = targetAltitude,
                 onValueChange = { onTargetAltitudeChanged(it) },
-                label = { Text(stringResource(R.string.label_target_altitude))},
+                label = { Text(stringResource(R.string.label_target_altitude)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = ThousandsSeparatorTransformation(),
                 modifier = Modifier.weight(1f)
             )
 
-            val unitLabel = if(isKilometers) {
-                "km"
-            } else {
-                "m"
-            }
+            val unitLabel = if (isKilometers) "km" else "m"
             Spacer(modifier = Modifier.width(8.dp))
-            Text(unitLabel,
+            Text(
+                unitLabel,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 4.dp))
-
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
         }
-
-
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-
                 keyboardController?.hide()
                 calculateResult()
-
             }
         ) {
             Text(stringResource(R.string.label_button_calculate))
@@ -252,19 +273,17 @@ fun OrbitalXferCalcScreenContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Result Card
         AnimatedVisibility(
             visible = orbitalXferResult != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2})
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
         ) {
-            // Result Card
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                // Safely read the non-null state
                 orbitalXferResult?.let { result ->
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -278,7 +297,6 @@ fun OrbitalXferCalcScreenContent(
                 }
             }
         }
-
 
     }
 }
@@ -309,6 +327,107 @@ fun OrbitalXferCalcScreen(
     )
 }
 
+@Composable
+fun OrbitalTransferCanvas(
+    bodyRadiusMeters: Double,
+    r1Meters: Double,
+    r2Meters: Double,
+    modifier: Modifier = Modifier
+) {
+    val transition = rememberInfiniteTransition(label = "TransferAnimation")
+    val animationProgress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ShipProgress"
+    )
+
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .background(Color(0xFF0B0E14))
+    ) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+
+        // 85% boundary so orbits don't clip the canvas edges
+        val maxCanvasRadius = (size.minDimension / 2f) * 0.85f
+
+        // Scale factor relative to largest radius
+        val maxOrbitMeters = maxOf(r1Meters, r2Meters).coerceAtLeast(bodyRadiusMeters * 1.1)
+        val scale = maxCanvasRadius / maxOrbitMeters.toFloat()
+
+        // Pixel dimensions
+        val bodyPixelRadius = (bodyRadiusMeters * scale).toFloat().coerceAtLeast(12.dp.toPx())
+        val r1Px = (r1Meters * scale).toFloat()
+        val r2Px = (r2Meters * scale).toFloat()
+
+        // 1. Central Body
+        drawCircle(
+            color = Color(0xFF3B82F6),
+            radius = bodyPixelRadius,
+            center = center
+        )
+
+        // 2. Initial Orbit (r1)
+        drawCircle(
+            color = Color.Cyan.copy(alpha = 0.5f),
+            radius = r1Px,
+            center = center,
+            style = Stroke(
+                width = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f))
+            )
+        )
+
+        // 3. Target Orbit (r2)
+        drawCircle(
+            color = Color.Magenta.copy(alpha = 0.5f),
+            radius = r2Px,
+            center = center,
+            style = Stroke(
+                width = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f))
+            )
+        )
+
+        // 4. Hohmann Transfer Ellipse Geometry
+        val semiMajorPx = (r1Px + r2Px) / 2f
+        val semiMinorPx = kotlin.math.sqrt(r1Px * r2Px)
+        val ellipseOffsetX = (r2Px - r1Px) / 2f
+        val ellipseCenter = Offset(center.x - ellipseOffsetX, center.y)
+
+        // Proper bounding box for the ellipse (left, top, right, bottom)
+        val ellipseBoundingRect = Rect(
+            left = ellipseCenter.x - semiMajorPx,
+            top = ellipseCenter.y - semiMinorPx,
+            right = ellipseCenter.x + semiMajorPx,
+            bottom = ellipseCenter.y + semiMinorPx
+        )
+
+        drawPath(
+            path = Path().apply {
+                addOval(ellipseBoundingRect)
+            },
+            color = Color(0xFF10B981),
+            style = Stroke(width = 3.dp.toPx())
+        )
+
+        // 5. Spacecraft Dot
+        val angle = animationProgress * 2 * Math.PI
+        val shipX = ellipseCenter.x + semiMajorPx * kotlin.math.cos(angle).toFloat()
+        val shipY = ellipseCenter.y + semiMinorPx * kotlin.math.sin(angle).toFloat()
+
+        drawCircle(
+            color = Color.White,
+            radius = 5.dp.toPx(),
+            center = Offset(shipX, shipY)
+        )
+    }
+}
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -317,4 +436,3 @@ fun OrbitalXferPreview() {
         OrbitalXferCalcScreen(onBackToMenu = {})
     }
 }
-
