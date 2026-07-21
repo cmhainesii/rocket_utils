@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +65,10 @@ import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.OrbitalXferViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +84,7 @@ fun OrbitalXferCalcScreenContent(
     onKilometersChanged: (Boolean) -> Unit,
     orbitalXferResult: OrbitalXferResult?,
     calculateResult: () -> Unit,
+    onSaveMission: (String) -> Unit,
 ) {
     var dropdownExpanded by remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -91,10 +97,13 @@ fun OrbitalXferCalcScreenContent(
     val r1Meters = bodyRadius + initialAltMeters
     val r2Meters = bodyRadius + targetAltMeters
 
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -267,6 +276,11 @@ fun OrbitalXferCalcScreenContent(
             onClick = {
                 keyboardController?.hide()
                 calculateResult()
+
+                coroutineScope.launch {
+                    kotlinx.coroutines.delay(100.milliseconds)
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
             }
         ) {
             Text(stringResource(R.string.label_button_calculate))
@@ -277,7 +291,11 @@ fun OrbitalXferCalcScreenContent(
         // Result Card
         AnimatedVisibility(
             visible = orbitalXferResult != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
+            enter = fadeIn(animationSpec = tween(500, 250)) +
+                slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(500, 250)
+                )
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -294,6 +312,17 @@ fun OrbitalXferCalcScreenContent(
                         ResultRow("Circularization Burn:", result.dv2)
                         Spacer(modifier = Modifier.height(4.dp))
                         ResultRow("Total dV Required:", result.total)
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Save button
+                        Button(
+                            onClick = { onSaveMission("My KSP Mission")},
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text("Save Mission")
+                        }
+
                     }
                 }
             }
@@ -321,10 +350,11 @@ fun OrbitalXferCalcScreen(
         onInitialAltitudeChanged = { viewModel.onInitialAltitudeChange(it) },
         targetAltitude = viewModel.targetAltitude,
         onTargetAltitudeChanged = { viewModel.onTargetAltitudeChange(it) },
-        isKilometers = viewModel.kilometers,
+        isKilometers = viewModel.isKilometers,
         onKilometersChanged = { viewModel.isKilometers(it) },
         orbitalXferResult = viewModel.orbitalXferResult,
-        calculateResult = { viewModel.calculateResult() }
+        calculateResult = { viewModel.calculateResult() },
+        onSaveMission = { name -> viewModel.saveMission(name)}
     )
 }
 
@@ -447,7 +477,8 @@ fun OrbitalXferPreview() {
             onKilometersChanged = {},
             orbitalXferResult = OrbitalXferResult("280.90 m/s", "240.92 m/s",
                 "521.82 m/s"),
-            calculateResult = {}
+            calculateResult = {},
+            onSaveMission = {},
         )
 
     }

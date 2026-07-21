@@ -1,26 +1,36 @@
 package com.tourian.rocketutils.ui.viewmodels
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.tourian.rocketutils.data.MissionPlanEntity
+import com.tourian.rocketutils.data.MissionRepository
+import com.tourian.rocketutils.data.RocketDatabase
 import com.tourian.rocketutils.objects.CelestialBody
 import com.tourian.rocketutils.ui.screens.OrbitalXferResult
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.sqrt
 
-class OrbitalXferViewModel : ViewModel() {
+class OrbitalXferViewModel(application: Application) : AndroidViewModel(application)  {
     var initialAltitude by mutableStateOf("")
         private set
     var targetAltitude by mutableStateOf("")
         private set
-    var kilometers by mutableStateOf(false)
+    var isKilometers by mutableStateOf(false)
     private set
     var selectedBody by mutableStateOf(CelestialBody.KERBIN)
         private set
     var orbitalXferResult by mutableStateOf<OrbitalXferResult?>(null)
         private set
+
+    private val repository = MissionRepository(
+        RocketDatabase.getDatabase(application).missionPlanDao()
+    )
 
     fun onInitialAltitudeChange(newValue: String) {
         initialAltitude = newValue.filter { it.isDigit() }
@@ -31,7 +41,7 @@ class OrbitalXferViewModel : ViewModel() {
     }
 
     fun isKilometers(newValue: Boolean) {
-        kilometers = newValue
+        isKilometers = newValue
     }
 
     fun onChangeSelectedBody(newValue: CelestialBody) {
@@ -43,7 +53,7 @@ class OrbitalXferViewModel : ViewModel() {
         var initialAlt = initialAltitude.toDoubleOrNull() ?: 0.0
         var targetAlt = targetAltitude.toDoubleOrNull() ?: 0.0
 
-        if (kilometers) {
+        if (isKilometers) {
             initialAlt *= 1000
             targetAlt *= 1000
         }
@@ -81,11 +91,21 @@ class OrbitalXferViewModel : ViewModel() {
             total = "$totalDvFormatted m/s"
         )
 
-
-
-
-
     }
 
+    fun saveMission(missionName: String) {
 
+        val result = orbitalXferResult ?: return
+
+        viewModelScope.launch {
+            val entity = MissionPlanEntity(
+                missionName = missionName.ifBlank { "${selectedBody.displayName} Orbit Transfer" },
+                bodyName = selectedBody.displayName,
+                initialAltitude = initialAltitude.toIntOrNull() ?: 0,
+                targetAltitude = targetAltitude.toIntOrNull() ?: 0,
+                isKilometers = isKilometers,
+                totalDeltaV = result.total
+            )
+        }
+    }
 }
