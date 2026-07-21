@@ -125,6 +125,7 @@ fun OrbitalXferCalcScreenContent(
             bodyRadiusMeters = bodyRadius,
             r1Meters = r1Meters,
             r2Meters = r2Meters,
+            selectedBody = selectedBody,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
@@ -332,6 +333,7 @@ fun OrbitalTransferCanvas(
     bodyRadiusMeters: Double,
     r1Meters: Double,
     r2Meters: Double,
+    selectedBody: CelestialBody,
     modifier: Modifier = Modifier
 ) {
     val transition = rememberInfiniteTransition(label = "TransferAnimation")
@@ -367,7 +369,7 @@ fun OrbitalTransferCanvas(
 
         // 1. Central Body
         drawCircle(
-            color = Color(0xFF3B82F6),
+            color = selectedBody.color,
             radius = bodyPixelRadius,
             center = center
         )
@@ -429,10 +431,24 @@ fun OrbitalTransferCanvas(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true, showSystemUi = true, apiLevel = 36)
 @Composable
 fun OrbitalXferPreview() {
     RocketUtilsTheme {
-        OrbitalXferCalcScreen(onBackToMenu = {})
+        OrbitalXferCalcScreenContent (
+            onBackToMenu = {},
+            CelestialBody.MINMUS,
+            onSelectedBodyChanged = {},
+            "250000",
+            onInitialAltitudeChanged = {},
+            "960000",
+            onTargetAltitudeChanged = {},
+            isKilometers = false,
+            onKilometersChanged = {},
+            orbitalXferResult = OrbitalXferResult("280.90 m/s", "240.92 m/s",
+                "521.82 m/s"),
+            calculateResult = {}
+        )
+
     }
 }
