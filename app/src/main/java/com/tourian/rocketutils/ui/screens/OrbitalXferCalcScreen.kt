@@ -25,6 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -35,8 +37,13 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,8 +72,6 @@ import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.OrbitalXferViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -100,235 +105,309 @@ fun OrbitalXferCalcScreenContent(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var missionNameInput by remember { mutableStateOf("") }
+    val snackBarHostState = remember { SnackbarHostState() }
 
-        // Top row - Title & Back Button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(onClick = onBackToMenu) {
-                Text(stringResource(R.string.label_button_back))
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-            RocketEmoji()
-
-            Text(
-                stringResource(R.string.heading_orbital_xfer),
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Visual Orbit Canvas placed directly inside the Column
-        OrbitalTransferCanvas(
-            bodyRadiusMeters = bodyRadius,
-            r1Meters = r1Meters,
-            r2Meters = r2Meters,
-            selectedBody = selectedBody,
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackBarHostState) }
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                stringResource(R.string.form_description_orbital_period),
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Dropdown: Select Parent Body
-        ExposedDropdownMenuBox(
-            expanded = dropdownExpanded,
-            onExpandedChange = { dropdownExpanded = !dropdownExpanded },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = selectedBody.displayName,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.label_parent_body)) },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
-                },
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                modifier = Modifier
-                    .menuAnchor(
-                        type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                        enabled = true
-                    )
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = dropdownExpanded,
-                onDismissRequest = { dropdownExpanded = false }
-            ) {
-                CelestialBody.entries.forEach { body ->
-                    DropdownMenuItem(
-                        text = { Text(body.displayName) },
-                        onClick = {
-                            onSelectedBodyChanged(body)
-                            dropdownExpanded = false
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Switch: Kilometers Toggle
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .toggleable(
-                    value = isKilometers,
-                    onValueChange = { onKilometersChanged(it) },
-                    role = Role.Switch
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.label_kilometers_switch),
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-            Switch(
-                checked = isKilometers,
-                onCheckedChange = null
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Initial Altitude
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            OutlinedTextField(
-                value = initialAltitude,
-                onValueChange = { onInitialAltitudeChanged(it) },
-                label = { Text(stringResource(R.string.label_intial_altitude)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                visualTransformation = ThousandsSeparatorTransformation(),
-                modifier = Modifier.weight(1f)
-            )
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            val unitLabel = if (isKilometers) "km" else "m"
-            Text(
-                unitLabel,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Target Altitude
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            OutlinedTextField(
-                value = targetAltitude,
-                onValueChange = { onTargetAltitudeChanged(it) },
-                label = { Text(stringResource(R.string.label_target_altitude)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                visualTransformation = ThousandsSeparatorTransformation(),
-                modifier = Modifier.weight(1f)
-            )
-
-            val unitLabel = if (isKilometers) "km" else "m"
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                unitLabel,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                keyboardController?.hide()
-                calculateResult()
-
-                coroutineScope.launch {
-                    kotlinx.coroutines.delay(100.milliseconds)
-                    scrollState.animateScrollTo(scrollState.maxValue)
-                }
-            }
-        ) {
-            Text(stringResource(R.string.label_button_calculate))
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Result Card
-        AnimatedVisibility(
-            visible = orbitalXferResult != null,
-            enter = fadeIn(animationSpec = tween(500, 250)) +
-                slideInVertically(
-                    initialOffsetY = { it / 2 },
-                    animationSpec = tween(500, 250)
-                )
-        ) {
-            Card(
+            // Top row - Title & Back Button
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                orbitalXferResult?.let { result ->
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ResultRow("Injection Burn:", result.dv1)
-                        ResultRow("Circularization Burn:", result.dv2)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        ResultRow("Total dV Required:", result.total)
+                Button(onClick = onBackToMenu) {
+                    Text(stringResource(R.string.label_button_back))
+                }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.weight(1f))
+                RocketEmoji()
 
-                        // Save button
-                        Button(
-                            onClick = { onSaveMission("My KSP Mission")},
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                Text(
+                    stringResource(R.string.heading_orbital_xfer),
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Visual Orbit Canvas placed directly inside the Column
+            OrbitalTransferCanvas(
+                bodyRadiusMeters = bodyRadius,
+                r1Meters = r1Meters,
+                r2Meters = r2Meters,
+                selectedBody = selectedBody,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    stringResource(R.string.form_description_orbital_period),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Dropdown: Select Parent Body
+            ExposedDropdownMenuBox(
+                expanded = dropdownExpanded,
+                onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = selectedBody.displayName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.label_parent_body)) },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                    },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier
+                        .menuAnchor(
+                            type = ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                            enabled = true
+                        )
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false }
+                ) {
+                    CelestialBody.entries.forEach { body ->
+                        DropdownMenuItem(
+                            text = { Text(body.displayName) },
+                            onClick = {
+                                onSelectedBodyChanged(body)
+                                dropdownExpanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Switch: Kilometers Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = isKilometers,
+                        onValueChange = { onKilometersChanged(it) },
+                        role = Role.Switch
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.label_kilometers_switch),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+                Switch(
+                    checked = isKilometers,
+                    onCheckedChange = null
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Initial Altitude
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                OutlinedTextField(
+                    value = initialAltitude,
+                    onValueChange = { onInitialAltitudeChanged(it) },
+                    label = { Text(stringResource(R.string.label_intial_altitude)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = ThousandsSeparatorTransformation(),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                val unitLabel = if (isKilometers) "km" else "m"
+                Text(
+                    unitLabel,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Target Altitude
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                OutlinedTextField(
+                    value = targetAltitude,
+                    onValueChange = { onTargetAltitudeChanged(it) },
+                    label = { Text(stringResource(R.string.label_target_altitude)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = ThousandsSeparatorTransformation(),
+                    modifier = Modifier.weight(1f)
+                )
+
+                val unitLabel = if (isKilometers) "km" else "m"
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    unitLabel,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    keyboardController?.hide()
+                    calculateResult()
+
+                    coroutineScope.launch {
+                        kotlinx.coroutines.delay(100.milliseconds)
+                        scrollState.animateScrollTo(scrollState.maxValue)
+                    }
+                }
+            ) {
+                Text(stringResource(R.string.label_button_calculate))
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Result Card
+            AnimatedVisibility(
+                visible = orbitalXferResult != null,
+                enter = fadeIn(animationSpec = tween(500, 150)) +
+                        slideInVertically(
+                            initialOffsetY = { it / 2 },
+                            animationSpec = tween(500, 150)
+                        )
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    orbitalXferResult?.let { result ->
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Save Mission")
-                        }
+                            ResultRow("Injection Burn:", result.dv1)
+                            ResultRow("Circularization Burn:", result.dv2)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            ResultRow("Total dV Required:", result.total)
 
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Save button
+                            Button(
+                                onClick = { onSaveMission("My KSP Mission")
+                                          showSaveDialog = true},
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) {
+                                Text("Save Mission")
+                            }
+
+                        }
+                    }
+                }
+            }
+
+        }
+        if (showSaveDialog) {
+            BasicAlertDialog(
+                onDismissRequest = { showSaveDialog = false }
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    tonalElevation = AlertDialogDefaults.TonalElevation,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(24.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text("Save Mission Plan",
+                            style = MaterialTheme.typography.headlineSmall)
+
+                        OutlinedTextField(
+                            value = missionNameInput,
+                            onValueChange = { missionNameInput = it },
+                            label = { Text("Mission Name")},
+                            placeholder = {
+                                Text("e.g. ${selectedBody.displayName} Transfer Alpha") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    showSaveDialog = false
+                                    missionNameInput = ""
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Button(
+                                onClick = {
+                                    val finalName = missionNameInput.ifBlank { "${selectedBody.displayName} Transfer" }
+                                    onSaveMission(finalName)
+                                    showSaveDialog = false
+                                    missionNameInput = ""
+
+                                    coroutineScope.launch {
+                                        snackBarHostState.showSnackbar("Saved '$finalName' to Mission Log!")
+                                    }
+                                }
+                            ) { Text("Save") }
+                        }
                     }
                 }
             }
         }
 
     }
+
+
 }
 
 data class OrbitalXferResult(
