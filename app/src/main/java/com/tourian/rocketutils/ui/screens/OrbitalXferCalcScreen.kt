@@ -1,4 +1,4 @@
-package com.tourian.rocketutils.ui.screens
+    package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -304,10 +304,10 @@ fun OrbitalXferCalcScreenContent(
             // Result Card
             AnimatedVisibility(
                 visible = orbitalXferResult != null,
-                enter = fadeIn(animationSpec = tween(500, 150)) +
+                enter = fadeIn(animationSpec = tween(850, 150)) +
                         slideInVertically(
                             initialOffsetY = { it / 2 },
-                            animationSpec = tween(500, 150)
+                            animationSpec = tween(850, 150)
                         )
             ) {
                 Card(

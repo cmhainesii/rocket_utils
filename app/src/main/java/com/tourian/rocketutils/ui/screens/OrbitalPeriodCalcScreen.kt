@@ -1,9 +1,12 @@
 package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,9 +35,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -49,8 +61,10 @@ import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.OrbitalPeriodViewModel
-
-
+import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,21 +79,17 @@ fun OrbitalPeriodCalcContent(
     onCalculateButtonPressed: () -> Unit,
     orbitalPeriodResult: OrbitalPeriodResult?,
     onBackToMenu: () -> Unit,
-
     ) {
 
-
-    // Tracks whether the dropdown list is currently popped open or closed
     var dropdownExpanded by remember { mutableStateOf(false) }
-
-
-
     val keyboardController = LocalSoftwareKeyboardController .current
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -223,6 +233,10 @@ fun OrbitalPeriodCalcContent(
         Button(
             onClick = {
                 keyboardController?.hide()
+                coroutineScope.launch {
+                    kotlinx.coroutines.delay(100.milliseconds)
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
                 onCalculateButtonPressed()
 
             },
@@ -235,7 +249,11 @@ fun OrbitalPeriodCalcContent(
 
         AnimatedVisibility(
             visible = orbitalPeriodResult != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
+            enter = fadeIn(animationSpec = tween(800, 150)) +
+                    slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(800, 150)
+                    )
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -247,6 +265,7 @@ fun OrbitalPeriodCalcContent(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        OrbitalPeriodGraphic()
                         ResultRow("Orbital Period:", result.time)
                         Spacer(modifier = Modifier.height(2.dp))
                         ResultRow("", result.seconds)
@@ -264,6 +283,147 @@ data class OrbitalPeriodResult(
     val seconds: String,
     val time: String
 )
+
+
+
+
+
+@Composable
+fun OrbitalPeriodGraphic(
+    modifier: Modifier = Modifier,
+    bodyColor: Color = MaterialTheme.colorScheme.primary,
+    orbitColor: Color = MaterialTheme.colorScheme.outlineVariant,
+    accentGradientColors: List<Color> = listOf(
+        MaterialTheme.colorScheme.tertiary,
+        MaterialTheme.colorScheme.primary
+    )
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(180.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxWidth().height(180.dp)) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val bodyRadius = 24.dp.toPx()
+            val orbitRadius = 65.dp.toPx()
+
+            // 1. Central celestial body
+            drawCircle(
+                color = bodyColor,
+                radius = bodyRadius,
+                center = center
+            )
+
+            // 2. Subtle dashed background orbit line
+            drawCircle(
+                color = orbitColor,
+                radius = orbitRadius,
+                center = center,
+                style = Stroke(
+                    width = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                )
+            )
+
+            // 3. Active arc tracking
+            val startAngle = -90f // 12 o'clock
+            val sweepAngle = 315f
+            val strokeWidth = 5.dp.toPx()
+
+            // Rotate draw scope so gradient starts at top (-90f)
+            rotate(degrees = startAngle, pivot = center) {
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        colors = accentGradientColors,
+                        center = center
+                    ),
+                    startAngle = 0f,
+                    sweepAngle = sweepAngle,
+                    useCenter = false,
+                    topLeft = Offset(center.x - orbitRadius, center.y - orbitRadius),
+                    size = Size(orbitRadius * 2, orbitRadius * 2),
+                    style = Stroke(width = strokeWidth)
+                )
+            }
+
+            // 4. Calculate endpoint node position
+            val endAngleRad = Math.toRadians((startAngle + sweepAngle).toDouble())
+            val craftX = center.x + orbitRadius * cos(endAngleRad).toFloat()
+            val craftY = center.y + orbitRadius * sin(endAngleRad).toFloat()
+            val craftCenter = Offset(craftX, craftY)
+
+            val headColor = accentGradientColors.last()
+
+            // Node Dot Shadow
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.5f),
+                radius = 7.dp.toPx(),
+                center = Offset(craftCenter.x + 2f, craftCenter.y + 2f)
+            )
+            // Core Node Dot
+            drawCircle(
+                color = headColor,
+                radius = 6.5.dp.toPx(),
+                center = craftCenter
+            )
+
+            // 5. Directional Arrow Geometry (Pure Compose Path)
+            val arrowSize = 12.dp.toPx() // Made larger so it's impossible to miss
+
+            // Tangent vector points forward along orbit flow
+            val tangentX = -sin(endAngleRad).toFloat()
+            val tangentY = cos(endAngleRad).toFloat()
+            // Normal vector points outward
+            val normalX = cos(endAngleRad).toFloat()
+            val normalY = sin(endAngleRad).toFloat()
+
+            // Helper function to build arrow path at a given offset
+            fun createArrowPath(offsetX: Float = 0f, offsetY: Float = 0f): Path {
+                val origin = Offset(craftCenter.x + offsetX, craftCenter.y + offsetY)
+
+                val tip = Offset(
+                    origin.x + tangentX * arrowSize,
+                    origin.y + tangentY * arrowSize
+                )
+                val left = Offset(
+                    origin.x - tangentX * (arrowSize * 0.3f) + normalX * (arrowSize * 0.5f),
+                    origin.y - tangentY * (arrowSize * 0.3f) + normalY * (arrowSize * 0.5f)
+                )
+                val right = Offset(
+                    origin.x - tangentX * (arrowSize * 0.3f) - normalX * (arrowSize * 0.5f),
+                    origin.y - tangentY * (arrowSize * 0.3f) - normalY * (arrowSize * 0.5f)
+                )
+
+                return Path().apply {
+                    moveTo(tip.x, tip.y)
+                    lineTo(left.x, left.y)
+                    lineTo(right.x, right.y)
+                    close()
+                }
+            }
+
+            // A. Draw Shadow Path (Offset slightly down and right)
+            drawPath(
+                path = createArrowPath(offsetX = 2f, offsetY = 2f),
+                color = Color.Black.copy(alpha = 0.6f)
+            )
+
+            // B. Draw Main High-Contrast Arrow (Bright White ensures high contrast on all themes)
+            drawPath(
+                path = createArrowPath(),
+                color = Color.White
+            )
+        }
+    }
+}
+
+
+
+
+
+
 
 @Composable
 fun OrbitalPeriodCalcScreen(
@@ -299,11 +459,3 @@ fun OrbitalPeriodCalcScreenPreview() {
         ) { }
     }
 }
-
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun OrbitalPeriodCalcScreenPreview() {
-//    RocketUtilsTheme{
-//        OrbitalPeriodCalcScreen(onBackToMenu = {}, null)
-//    }
-//}

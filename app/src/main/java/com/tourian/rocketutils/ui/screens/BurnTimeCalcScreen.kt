@@ -1,6 +1,7 @@
 package com.tourian.rocketutils.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -35,6 +37,8 @@ import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.BurnTimeViewModel
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun BurnTimeCalcScreenContent(
@@ -55,10 +59,13 @@ fun BurnTimeCalcScreenContent(
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -144,6 +151,10 @@ fun BurnTimeCalcScreenContent(
         Button(
             onClick = {
                 keyboardController?.hide()
+                coroutineScope.launch {
+                    kotlinx.coroutines.delay(100.milliseconds)
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
                 onCalculateButtonPressed()
 
             },
@@ -156,7 +167,11 @@ fun BurnTimeCalcScreenContent(
 
         AnimatedVisibility(
             visible = burnResult != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
+            enter = fadeIn(animationSpec = tween(800, 150)) +
+                    slideInVertically(
+                        initialOffsetY = { it / 2 },
+                        animationSpec = tween(800, 150)
+                    )
         ) {
 
             burnResult?.let { result ->

@@ -22,10 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -35,12 +32,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tourian.rocketutils.R
-import com.tourian.rocketutils.objects.TimeHolder
 import com.tourian.rocketutils.ui.components.ResultRow
 import com.tourian.rocketutils.ui.components.RocketEmoji
 import com.tourian.rocketutils.ui.theme.RocketUtilsTheme
 import com.tourian.rocketutils.ui.viewmodels.ResonateOrbitViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ResonateOrbitCalcScreenContent(
@@ -60,11 +58,13 @@ fun ResonateOrbitCalcScreenContent(
     ) {
 
     val keyboardController = LocalSoftwareKeyboardController.current
+    val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // Makes it scrollable when keyboard is up
+            .verticalScroll(scrollState) // Makes it scrollable when keyboard is up
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -165,6 +165,10 @@ fun ResonateOrbitCalcScreenContent(
         Button(
             onClick = {
                 keyboardController?.hide()
+                coroutineScope.launch {
+                    kotlinx.coroutines.delay(100.milliseconds)
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
                 onCalculateButtonPressed()
             },
             modifier = Modifier.fillMaxWidth()
