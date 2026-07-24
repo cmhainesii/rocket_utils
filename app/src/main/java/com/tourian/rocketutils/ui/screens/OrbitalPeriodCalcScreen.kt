@@ -370,7 +370,7 @@ fun OrbitalPeriodGraphic(
             )
 
             // 5. Directional Arrow Geometry (Pure Compose Path)
-            val arrowSize = 12.dp.toPx() // Made larger so it's impossible to miss
+            val arrowSize = 8.dp.toPx() // Made larger so it's impossible to miss
 
             // Tangent vector points forward along orbit flow
             val tangentX = -sin(endAngleRad).toFloat()
